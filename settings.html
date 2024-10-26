@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ayarlar - Stor Temizlik Firması</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <style>
+     body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    background: no-repeat center center fixed; /* Arka plan resmi */
+    background-size: cover;
+    display: flex; /* Flexbox ile içerik ortalama */
+    justify-content: center;
+    align-items: center;
+}
+
+.modal {
+    display: none; /* Varsayılan olarak gizli */
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%; /* Tüm ekranı kaplar */
+    height: 100%; /* Tüm ekranı kaplar */
+    overflow: auto; /* Taşan içerik için kaydırma çubuğu */
+    background-color: rgba(0, 0, 0, 0.4);
+    padding-top: 60px; /* Üstten boşluk */
+}
+
+button {
+    padding: 8px 12px; /* İç boşlukları ayarla */
+    font-size: 14px; /* Yazı boyutunu biraz artır */
+    border-radius: 10px; /* Kenarları yuvarla */
+    background-color: #007BFF; /* Arka plan rengi */
+    color: white; /* Yazı rengi */
+    border: none; /* Kenar boşluğu yok */
+    cursor: pointer; /* İmleç buton üzerindeyken değişir */
+}
+
+button:hover {
+    background-color: #0056b3; /* Hover rengi */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto; /* Üstten ve alttan boşluk */
+    padding: 20px; /* İçerik için boşluk */
+    border: 1px solid #888;
+    width: 90%; /* Mobil uyum için genişlik ayarı */
+    max-width: 300px; /* Maksimum genişlik ayarı */
+    border-radius: 10px; /* Kenarları yuvarlat */
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+h1 {
+    background-color: #007BFF;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 24px; /* Yazı boyutunu artır */
+    width: 90%; /* Mobil uyum için genişlik ayarı */
+    max-width: 400px; /* Maksimum genişlik ayarı */
+}
+
+    </style>
+</head>
+<body>
+<h1>Ayarlar</h1>
+<div id="settings-container">
+    <table id="price-list" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th>Firma Adı</th>
+                <th>Stor Fiyatı</th>
+                <th>Zebra Fiyatı</th>
+                <th>Koltuk Fiyatı</th>
+                <th>Yatak Fiyatı</th>
+                <th>Diğer</th>
+                <th>İşlem</th>
+            </tr>
+        </thead>
+        <tbody id="price-list-body">
+            <!-- Satırlar buraya yüklenecek -->
+        </tbody>
+    </table>
+    <button id="add-company-btn">Firma Ekle</button>
+    <button id="save-all-prices">Tüm Fiyatları Kaydet</button>
+    <input type="file" id="import-customers" accept=".xlsx" />
+    <button id="import-button" onclick="importCustomers()">Müşterileri İçe Aktar</button>
+    <button id="backup-data" onclick="backupData()">Verileri Yedekle</button>
+    <button id="restore-data" onclick="restoreData()">Verileri Geri Yükle</button>
+
+    <div id="reset-container" class="setting-item" style="text-align: right;">
+        <button id="reset-data" onclick="resetData()">Tüm Verileri Sıfırla</button>
+    </div>
+
+    <!-- Arka plan resmi yükleme -->
+    <div>
+        <input type="file" id="background-upload" accept="image/*" onchange="uploadBackground()" />
+    </div>
+
+    <button id="change-password-btn" onclick="openPasswordModal()">Şifre Değiştir</button>
+
+    <div class="fixed-menu">
+        <a href="order-list.html"><i class="fas fa-list"></i><span>Sipariş Listesi</span></a>
+        <a href="customers.html"><i class="fas fa-users"></i><span>Müşteriler</span></a>
+        <a href="reports.html"><i class="fas fa-chart-line"></i><span>Raporlar</span></a>
+        <a href="settings.html"><i class="fas fa-cog"></i><span>Ayarlar</span></a>
+        <a href="index.html" onclick="logout()"><i class="fas fa-sign-out-alt"></i><span>Çıkış</span></a>
+    </div>
+<div>
+    <input type="file" id="logo-upload" accept="image/*" onchange="uploadLogo()" />
+    <button onclick="saveLogo()">Logo Yükle</button>
+</div>
+
+
+    <!-- Şifre değiştirme modalı -->
+    <div id="password-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closePasswordModal()">&times;</span>
+            <h2>Şifre Değiştir</h2>
+            <label for="old-password">Eski Şifre:</label>
+            <input type="password" id="old-password"><br><br>
+            <label for="new-password">Yeni Şifre:</label>
+            <input type="password" id="new-password"><br><br>
+            <button onclick="changePassword()">Kaydet</button>
+        </div>
+    </div>
+
+
+
+<script>
+    let correctPassword = localStorage.getItem('correctpass') || "1234";
+
+    function loadPrices() {
+        const prices = JSON.parse(localStorage.getItem('prices')) || {};
+        const tbody = document.getElementById('price-list-body');
+        tbody.innerHTML = ''; // Mevcut satırları temizle
+
+        const companies = Object.keys(prices).length > 0 ? Object.keys(prices) : [
+            'Hisar Temizlik',
+            'Cadde Halı Yıkama',
+            'Sevim Halı Yıkama',
+            'Şahinler Halı Yıkama',
+            'Sindoma Halı Yıkama',
+            'Demirbaş Halı Yıkama'
+        ];
+
+        companies.forEach(company => {
+            const priceInfo = prices[company] || { stor: 0, zebra: 0, koltuk: 1, yatak: 1, diğer: 1 };
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="company-name">${company}</td>
+                <td><input type="number" class="stor-price" value="${priceInfo.stor}" step="0.01"></td>
+                <td><input type="number" class="zebra-price" value="${priceInfo.zebra}" step="0.01"></td>
+                <td><input type="number" class="koltuk-price" value="${priceInfo.koltuk}" step="0.01"></td>
+                <td><input type="number" class="yatak-price" value="${priceInfo.yatak}" step="0.01"></td>
+                <td><input type="number" class="diğer-price" value="${priceInfo.diğer}" step="0.01"></td>
+                <td>
+                    <button onclick="savePrice(this)">Kaydet</button>
+                    <button onclick="editCompanyName(this)">Düzenle</button>
+                    <button onclick="deleteCompany(this)">Sil</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+function uploadLogo() {
+    const fileInput = document.getElementById('logo-upload');
+    const file = fileInput.files[0];
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            localStorage.setItem('companyLogo', event.target.result);
+            alert("Logo başarıyla yüklendi!");
+        };
+        reader.readAsDataURL(file);
+    } else {
+        alert("Lütfen bir dosya seçin.");
+    }
+}
+
+function getLogo() {
+    return localStorage.getItem('companyLogo');
+}
+
+
+
+    function uploadBackground() {
+        const fileInput = document.getElementById('background-upload');
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+            document.body.style.backgroundImage = `url(${event.target.result})`;
+            localStorage.setItem('backgroundpic', event.target.result); // Resmi kaydet
+        };
+
+        if (file) {
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function logout() {
+        alert("Başarıyla çıkış yapıldı.");
+    }
+
+    function openPasswordModal() {
+        document.getElementById("password-modal").style.display = "block";
+    }
+
+    function closePasswordModal() {
+        document.getElementById("password-modal").style.display = "none";
+    }
+
+    function changePassword() {
+        const oldPassword = document.getElementById("old-password").value;
+        const newPassword = document.getElementById("new-password").value;
+
+        if (oldPassword === correctPassword) {
+            correctPassword = newPassword; // Yeni şifreyi kaydet
+            localStorage.setItem('correctpass', correctPassword); // Yeni şifreyi localStorage'a kaydet
+            alert("Şifre başarıyla değiştirildi!");
+            closePasswordModal();
+        } else {
+            alert("Eski şifre yanlış.");
+        }
+    }
+
+    function savePrice(button) {
+        const row = button.closest('tr');
+        const companyName = row.querySelector('.company-name').textContent;
+        const storPrice = parseFloat(row.querySelector('.stor-price').value) || 0;
+        const zebraPrice = parseFloat(row.querySelector('.zebra-price').value) || 0;
+        const koltukPrice = parseFloat(row.querySelector('.koltuk-price').value) || 1;
+        const yatakPrice = parseFloat(row.querySelector('.yatak-price').value) || 1;
+        const diğerPrice = parseFloat(row.querySelector('.diğer-price').value) || 1;
+
+
+        const prices = JSON.parse(localStorage.getItem('prices')) || {};
+        prices[companyName] = {
+            stor: storPrice,
+            zebra: zebraPrice,
+            koltuk: koltukPrice,
+            yatak: yatakPrice,
+            diğer: diğerPrice,
+        };
+
+        localStorage.setItem('prices', JSON.stringify(prices));
+        alert(`${companyName} fiyatları başarıyla kaydedildi!`);
+    }
+
+    function editCompanyName(button) {
+        const row = button.closest('tr');
+        const companyCell = row.querySelector('.company-name');
+        const currentName = companyCell.textContent;
+        const newName = prompt("Yeni Firma Adı:", currentName);
+        if (newName) {
+            const prices = JSON.parse(localStorage.getItem('prices')) || {};
+            prices[newName] = prices[currentName]; // Yeni isimle fiyatları kopyala
+            delete prices[currentName]; // Eski ismi sil
+            localStorage.setItem('prices', JSON.stringify(prices));
+            companyCell.textContent = newName; // Tabloyu güncelle
+            alert(`${currentName} başarıyla güncellendi!`);
+        }
+    }
+
+    function deleteCompany(button) {
+        const row = button.closest('tr');
+        const companyCell = row.querySelector('.company-name');
+        const companyName = companyCell.textContent;
+
+        const prices = JSON.parse(localStorage.getItem('prices')) || {};
+        delete prices[companyName]; // Firma fiyatlarını sil
+        localStorage.setItem('prices', JSON.stringify(prices)); // Güncel verileri kaydet
+        row.remove(); // Tablo satırını sil
+        alert(`${companyName} başarıyla silindi!`);
+    }
+
+    document.getElementById('save-all-prices').onclick = function() {
+        const rows = document.querySelectorAll('#price-list-body tr');
+        const prices = {};
+
+        rows.forEach(row => {
+            const companyName = row.querySelector('.company-name').textContent;
+            const storPrice = parseFloat(row.querySelector('.stor-price').value) || 0;
+            const zebraPrice = parseFloat(row.querySelector('.zebra-price').value) || 0;
+            const koltukPrice = parseFloat(row.querySelector('.koltuk-price').value) || 1;
+            const yatakPrice = parseFloat(row.querySelector('.yatak-price').value) || 1;
+            const diğerPrice = parseFloat(row.querySelector('.diğer-price').value) || 1;
+
+            prices[companyName] = {
+                stor: storPrice,
+                zebra: zebraPrice,
+                koltuk: koltukPrice,
+                yatak: yatakPrice,
+                diğer: diğerPrice,
+            };
+        });
+
+        localStorage.setItem('prices', JSON.stringify(prices));
+        alert('Tüm fiyatlar başarıyla kaydedildi!');
+    };
+
+    loadPrices(); // Sayfa yüklendiğinde fiyatları yükle
+
+        function resetData() {
+            const password = prompt("Lütfen şifreyi girin:");
+            const correctPassword = "uğur6161"; // Şifrenizi buraya yazın
+
+            if (password === correctPassword) {
+                localStorage.clear(); // Tüm verileri sıfırlamak için
+                alert("Tüm veriler başarıyla sıfırlandı!");
+                loadPrices(); // Tabloyu güncelle
+            } else {
+                alert("Yanlış şifre, işlem iptal edildi.");
+            }
+        }
+
+function backupData() {
+    const prices = localStorage.getItem('prices') || '{}'; // Fiyat verilerini al
+    const customers = localStorage.getItem('customers') || '[]'; // Müşteri verilerini al
+    const orders = localStorage.getItem('orders') || '[]'; // Sipariş verilerini al
+    const monthlyReport = localStorage.getItem('MonthlyReport') || '[]'; // Aylık raporları al
+
+    const dataToBackup = {
+        prices,
+        customers,
+        orders,
+        monthlyReport,
+    };
+
+    const blob = new Blob([JSON.stringify(dataToBackup)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'backup.json'; // Yedek dosya ismi
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    alert("Veriler başarıyla yedeklendi!");
+}
+
+function restoreData() {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'application/json';
+
+    fileInput.onchange = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = JSON.parse(e.target.result);
+            localStorage.setItem('prices', data.prices);
+            localStorage.setItem('customers', data.customers);
+            localStorage.setItem('orders', data.orders);
+            localStorage.setItem('MonthlyReport', data.monthlyReport);
+            alert("Veriler başarıyla geri yüklendi!");
+            loadPrices(); // Tabloyu güncelle
+        };
+
+        reader.readAsText(file);
+    };
+
+    fileInput.click();
+}
+
+
+        function importCustomers() {
+            const fileInput = document.getElementById('import-customers');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Lütfen bir dosya seçin.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                // Müşteri verilerini kaydet
+                localStorage.setItem('customers', JSON.stringify(jsonData));
+                alert("Müşteri verileri başarıyla yüklendi!");
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        document.getElementById('add-company-btn').onclick = function() {
+            const companyName = prompt("Firma Adı:");
+            if (companyName) {
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td class="company-name">${companyName}</td>
+                    <td><input type="number" class="stor-price" value="0" step="0.01"></td>
+                    <td><input type="number" class="zebra-price" value="0" step="0.01"></td>
+                    <td><input type="number" class="koltuk-price" value="1" step="0.01"></td>
+                    <td><input type="number" class="yatak-price" value="1" step="0.01"></td>
+                    <td><input type="number" class="diğer-price" value="1" step="0.01"></td>
+                    <td>
+                        <button onclick="savePrice(this)">Kaydet</button>
+                        <button onclick="editCompanyName(this)">Düzenle</button>
+                        <button onclick="deleteCompany(this)">Sil</button>
+                    </td>
+                `;
+                document.getElementById('price-list-body').appendChild(newRow);
+                
+                // Yeni firma bilgisini localStorage'a kaydet
+                const prices = JSON.parse(localStorage.getItem('prices')) || {};
+                prices[companyName] = { stor: 0, zebra: 0, koltuk: 1, yatak: 1, diğer: 1 };
+                localStorage.setItem('prices', JSON.stringify(prices));
+                alert(`${companyName} başarıyla eklendi!`);
+            }
+        }
+
+        window.onload = function() {
+            loadPrices();
+            const backgroundPic = localStorage.getItem('backgroundpic');
+            if (backgroundPic) {
+                document.body.style.backgroundImage = `url(${backgroundPic})`;
+            }
+        };
+    </script>
+</body>
+</html>

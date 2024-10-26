@@ -1,0 +1,261 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+h1 {
+    background-color: #007BFF;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+form {
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    margin: auto;
+    width: 90%; /* Mobil uyumluluk için genişlik ayarı */
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    transition: border-color 0.3s;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus {
+    border-color: #007BFF;
+    outline: none;
+}
+
+button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px; /* Buton boyutunu ayarladık */
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: 100%; /* Butonu tam genişlikte yapmak için */
+}
+
+button:hover {
+    background-color: #218838;
+}
+
+#orders-container,
+#customers-container,
+#reports-container,
+#settings-container,
+#new-order-container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+    background: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 90%; /* Mobil uyumluluk için genişlik ayarı */
+}
+
+.group-header {
+    font-weight: bold;
+    margin-top: 20px;
+    border-bottom: 2px solid #007BFF;
+    padding-bottom: 5px;
+}
+
+/* Sabit alt menü barı */
+.fixed-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #007BFF;
+    display: flex;
+    justify-content: space-around;
+    padding: 5px 0;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.fixed-menu a {
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    flex: 1;
+}
+
+.fixed-menu a i {
+    display: block;
+    font-size: 24px; /* İkon boyutu */
+}
+
+.fixed-menu a:hover {
+    background-color: #0056b3; /* Hover rengi */
+}
+
+/* Müşteri detay modalı */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 10% auto; /* Mobil uyum için margin ayarı */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 90%; /* Mobil uyum için genişlik ayarı */
+}
+
+.close {
+    background-color: transparent;
+    border: none;
+    color: #aaa;
+    font-size: 16px;
+    font-weight: bold;
+    float: right;
+    cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+}
+
+#customer-suggestions {
+    border: 1px solid #ccc;
+    max-height: 150px;
+    overflow-y: auto;
+    display: none;
+    position: absolute;
+    background: white;
+    z-index: 1000;
+}
+
+#customer-suggestions div {
+    padding: 5px;
+    cursor: pointer;
+}
+
+#customer-suggestions div:hover {
+    background-color: #f0f0f0;
+}
+
+.measurement-row {
+    display: flex;
+    flex-wrap: wrap; /* Mobil uyum için esneklik */
+    margin-bottom: 10px;
+}
+
+.measurement-row label {
+    margin: 0 5px;
+}
+
+.measurement-row select,
+.measurement-row input {
+    flex: 1; /* Esneklik kazandırdık */
+    margin-right: 5px;
+    padding: 5px;
+}
+
+.measurement-row input.width,
+.measurement-row input.height {
+    width: 50px; /* İstediğiniz genişlik */
+    padding: 5px; /* İçerik için biraz boşluk */
+    box-sizing: border-box; /* Kenar boşlukları dahil edilerek hesaplanmasını sağlar */
+}
+
+.measurement-row button {
+    margin-left: 5px;
+}
+
+/* Müşteri arama alanı */
+#customer-search {
+    margin-bottom: 20px;
+}
+
+/* Müşteri listesi alanı */
+#customer-list {
+    margin-top: 20px;
+}
+
+/* Müşteri tablosu stilleri */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+    text-align: center; /* Tüm hücreleri ortaladık */
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #007BFF;
+    color: white;
+}
+
+/* Buton stili */
+td button {
+    padding: 10px 15px; /* Buton boyutunu küçülttük */
+}
+
+/* Özelleştirilmiş stiller (new-order, order-list, customers, reports, settings) */
+.new-order-header,
+.order-list-header,
+.customers-header,
+.reports-header,
+.settings-header {
+    margin: 20px 0;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Medya Sorguları ile daha fazla mobil uyumluluk için */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.5em;
+    }
+
+    .modal-content {
+        width: 95%; /* Mobilde modal genişliğini artırdık */
+    }
+
+    button {
+        padding: 15px; /* Buton boyutunu artırdık */
+    }
+
+    /* Tablo hücreleri için */
+    th, td {
+        font-size: 14px; /* Mobilde yazı boyutunu küçült */
+    }
+}

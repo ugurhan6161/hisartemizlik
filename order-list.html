@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sipariş Listesi - Stor Temizlik Firması</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background: no-repeat center center fixed; /* Arka plan resmi buraya yüklenecek */
+            background-size: cover;
+            align-items: center;
+        }
+/* Genel stil ayarları */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px; /* Hücre içi boşluk */
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #007BFF;
+    color: white;
+}
+
+/* Modal stil ayarları */
+.modal, #order-details-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content, #order-details-modal .modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 15px;
+    border: 1px solid #888;
+    width: 90%; /* Mobil uyum için genişlik ayarı */
+    max-width: 400px; /* Maksimum genişlik ayarı */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    animation: fadeIn 0.3s; /* Fade-in animasyonu eklendi */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Modal içeriği stil ayarları */
+.modal-content h2, 
+#order-details-modal .modal-content h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.modal-content table, 
+#order-details-modal .modal-content table {
+    width: 100%;
+    margin-bottom: 20px; /* Tablo altına boşluk eklendi */
+}
+
+#order-details-modal .modal-content th, 
+#order-details-modal .modal-content td {
+    border: 1px solid #888;
+    padding: 8px; /* Mobil uyum için hücre içi boşluk artırıldı */
+    text-align: left; /* Metin hizalaması sol */
+}
+
+/* Modal butonları */
+.modal-content button, 
+#order-details-modal .modal-content button {
+    display: inline-block;
+    margin: 10px 0;
+    width: 100%; /* Butonları tam genişlikte yapmak için */
+}
+
+.modal-content .print-button, 
+#order-details-modal .modal-content .print-button {
+    display: block;
+    margin: 0 auto;
+}
+
+.modal-content .delete-button, 
+#order-details-modal .modal-content .delete-button {
+    float: right;
+}
+
+/* Tablo özellikleri için stil ayarları */
+.table-custom {
+    width: 100%; /* Mobil uyum için genişlik ayarı */
+}
+
+.table-custom th, 
+.table-custom td {
+    height: 40px; /* Satır yüksekliği */
+}
+
+/* Vurgu stili */
+.highlight {
+    animation: blink 1s infinite;
+    background-color: #ffcccc; /* Kırmızı arka plan */
+}
+
+@keyframes blink {
+    0%, 100% { background-color: #ffcccc; }
+    50% { background-color: #ffffff; }
+}
+
+/* Medya Sorguları ile daha fazla mobil uyumluluk için */
+@media (max-width: 768px) {
+    .modal-content, #order-details-modal .modal-content {
+        width: 95%; /* Modal genişliğini artırdık */
+    }
+    
+    th, td {
+        font-size: 14px; /* Mobilde yazı boyutunu küçült */
+    }
+    
+    .modal-content button, 
+    #order-details-modal .modal-content button {
+        padding: 15px; /* Buton boyutunu artırdık */
+    }
+}
+    </style>
+</head>
+<body>
+    <h1>Sipariş Listesi</h1>
+
+<div id="orders-container" style="width: 38%;">
+    <button id="new-order-btn" onclick="openNewOrderModal()" style="margin-bottom: 20px;">Yeni Sipariş</button>
+    <button id="refresh-btn" onclick="refreshPage()" style="margin-bottom: 20px;">Yenile</button>
+    <input type="text" id="order-search" placeholder="Sipariş arayın..." onkeyup="searchOrders()" style="margin-bottom: 2px;">
+    
+    <h2>Yeni Siparişler</h2>
+    <table id="new-orders-table" border="1" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th>Kod</th>
+                <th>Müşteri</th>
+                <th>Firma</th>
+                <th>Tarih</th>
+                <th>Detay</th>
+                <th>Durum</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    
+    <h2>Temizlenmiş Siparişler</h2>
+    <table id="cleaned-orders-table" border="1" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th>Kod</th>
+                <th>Müşteri</th>
+                <th>Firma</th>
+                <th>Tarih</th>
+                <th>Detay</th>
+                <th>Durum</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    
+    <h2>Teslim Edilmiş Siparişler</h2>
+    <table id="delivered-orders-table" border="1" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th>Kod</th>
+                <th>Müşteri</th>
+                <th>Firma</th>
+                <th>Tarih</th>
+                <th>Detay</th>
+                <th>Durum</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+    <div class="fixed-menu">
+    <a href="order-list.html"><i class="fas fa-list"></i><span>Sipariş Listesi</span></a>
+    <a href="customers.html"><i class="fas fa-users"></i><span>Müşteriler</span></a>
+    <a href="reports.html"><i class="fas fa-chart-line"></i><span>Raporlar</span></a>
+    <a href="settings.html"><i class="fas fa-cog"></i><span>Ayarlar</span></a>
+    <a href="index.html" onclick="logout()"><i class="fas fa-sign-out-alt"></i><span>Çıkış</span></a>
+</div>
+
+    <!-- Yeni Sipariş Modal -->
+    <div id="new-order-modal" class="modal">
+        <div class="modal-content">
+            <button class="close" onclick="closeNewOrderModal()">Kapat</button>
+            <h2>Yeni Sipariş</h2>
+            <form id="new-order-form">
+                <label for="customer-name">Müşteri Adı:</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="text" id="customer-name" oninput="filterCustomers()" required>
+                    <button type="button" class="add-customer-btn" onclick="openAddCustomer()">+</button>
+                </div>
+                <div id="customer-suggestions"></div>
+                <button type="button" id="add-measurement">+ Ekle</button>
+
+<div id="measurements-container">
+    <div class="measurement-row">
+        <select class="product-type" onchange="handleProductTypeChange(this)">
+            <option value="stor">Stor</option>
+            <option value="zebra">Zebra</option>
+            <option value="koltuk">Koltuk</option>
+            <option value="yatak">Yatak</option>
+            <option value="diğer">Diğer</option>
+
+        </select>
+        <label for="width">En:</label>
+        <input type="number" class="width" required>
+        <label for="height">Boy:</label>
+        <input type="number" class="height" required>
+        <button type="button" class="remove-measurement" onclick="removeMeasurement(this)">Kaldır</button>
+    </div>
+                </div>
+                <label for="order-status">Durum:</label>
+                <select id="order-status">
+                    <option value="yeni">Yeni</option>
+                    <option value="temizlendi">Temizlendi</option>
+                    <option value="teslim-edildi">Teslim Edildi</option>
+                </select>
+                <button class="submit-button" onclick="submitOrder(event)">Siparişi Kaydet</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sipariş Detayları Modal -->
+    <div id="order-details-modal" class="modal">
+        <div class="modal-content">
+            <button class="close" onclick="closeModal()">Kapat</button>
+            <button class="delete-button" onclick="deleteOrder()">Sil</button>
+            <h2>Detaylar</h2>
+            <div id="details-content"></div>
+            <h3 id="total-price"></h3>
+            <button class="print-button" onclick="printOrder()">Yazdır</button>                
+        </div>
+    </div>
+
+    <script>
+        const customers = [];
+        const customerSuggestions = document.getElementById('customer-suggestions');
+        const measurementsContainer = document.getElementById('measurements-container');
+        const newOrderModal = document.getElementById('new-order-modal');
+        const ordersContainer = document.getElementById('orders-container');
+        const orderDetailsModal = document.getElementById('order-details-modal');
+        const detailsContent = document.getElementById('details-content');
+        const totalPriceDisplay = document.getElementById('total-price');
+
+        function loadCustomers() {
+            const storedCustomers = JSON.parse(localStorage.getItem('customers')) || [];
+            customers.push(...storedCustomers);
+        }
+
+        function loadOrders() {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            displayOrders(orders);
+        }
+
+        function openNewOrderModal() {
+            newOrderModal.style.display = 'block';
+            loadCustomers();
+        }
+   function logout() {
+        alert("Başarıyla çıkış yapıldı.");
+    }
+
+        function closeNewOrderModal() {
+            newOrderModal.style.display = 'none';
+        }
+
+        function filterCustomers() {
+            const searchTerm = document.getElementById('customer-name').value.toLowerCase();
+            customerSuggestions.innerHTML = '';
+            const filteredCustomers = customers.filter(customer => customer.name.toLowerCase().includes(searchTerm));
+
+            if (filteredCustomers.length > 0 && searchTerm) {
+                customerSuggestions.style.display = 'block';
+                const uniqueNames = new Set();
+                filteredCustomers.forEach(customer => {
+                    if (!uniqueNames.has(customer.name)) {
+                        uniqueNames.add(customer.name);
+                        const suggestionDiv = document.createElement('div');
+                        suggestionDiv.innerText = customer.name;
+                        suggestionDiv.onclick = function() {
+                            document.getElementById('customer-name').value = customer.name;
+                            customerSuggestions.style.display = 'none';
+                        };
+                        customerSuggestions.appendChild(suggestionDiv);
+                    }
+                });
+            } else {
+                customerSuggestions.style.display = 'none';
+            }
+        }
+function handleProductTypeChange(selectElement) {
+    const measurementRow = selectElement.closest('.measurement-row');
+    
+    const widthLabel = measurementRow.querySelector('label[for="width"]');
+    const heightLabel = measurementRow.querySelector('label[for="height"]');
+    const widthInput = measurementRow.querySelector('.width');
+    const heightInput = measurementRow.querySelector('.height');
+
+    const selectedValue = selectElement.value;
+
+    if (selectedValue === 'koltuk' || selectedValue === 'yatak' || selectedValue === 'diğer') {
+        widthLabel.textContent = 'Adet'; // "En" etiketini "Adet" yap
+        heightLabel.textContent = 'Fiyat'; // "Boy" etiketini "Fiyat" yap
+    } else {
+        widthLabel.textContent = 'En'; // "Adet" etiketini geri al
+        heightLabel.textContent = 'Boy'; // "Fiyat" etiketini geri al
+    }
+}
+
+
+        function openAddCustomer() {
+            window.location.href = 'customers.html';
+        }
+
+        document.getElementById('add-measurement').onclick = function() {
+            const newMeasurementRow = document.createElement('div');
+            newMeasurementRow.classList.add('measurement-row');
+
+            newMeasurementRow.innerHTML = `
+        <select class="product-type" onchange="handleProductTypeChange(this)">
+                            <option value="stor">Stor</option>
+                            <option value="zebra">Zebra</option>
+                            <option value="koltuk">Koltuk</option>
+                            <option value="yatak">Yatak</option>
+                            <option value="diğer">Diğer</option>
+                </select>
+                <label for="width">En:</label>
+                <input type="number" class="width" required>
+                <label for="height">Boy:</label>
+                <input type="number" class="height" required>
+                <button type="button" class="remove-measurement" onclick="removeMeasurement(this)">Kaldır</button>
+            `;
+
+            measurementsContainer.appendChild(newMeasurementRow);
+        };
+
+        function removeMeasurement(button) {
+            measurementsContainer.removeChild(button.parentElement);
+        }
+
+function submitOrder(event) {
+    event.preventDefault();
+    const selectedName = document.getElementById('customer-name').value;
+    const customer = customers.find(c => c.name === selectedName);
+    const orderData = [];
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        const lastCode = orders.length > 0 ? Math.max(...orders.map(o => o.code)) : 9999; // En son sipariş kodunu al
+        const newCode = (lastCode + 1) % 100000; // 100000'e ulaştığında sıfırdan başla
+
+    const measurementRows = measurementsContainer.getElementsByClassName('measurement-row');
+    for (let row of measurementRows) {
+        const productType = row.querySelector('.product-type').value;
+        const width = parseFloat(row.querySelector('.width').value);
+        const height = parseFloat(row.querySelector('.height').value);
+
+        if (width && height) {
+            orderData.push({ productType, width, height });
+        }
+    }
+
+    const orderStatus = document.getElementById('order-status').value;
+
+    if (selectedName && orderData.length > 0) {
+        const now = new Date();
+        const orderDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString();
+
+
+        // Fiyatları al
+        const prices = JSON.parse(localStorage.getItem('prices')) || {};
+        const customerPrices = prices[customer.company] || { stor: 0, zebra: 0, koltuk: 1, yatak: 1, diğer: 1 };
+        const productGroups = {};
+
+        // Ölçümleri ve fiyatları işleyerek toplam alan ve birim fiyatı ekle
+        orderData.forEach(item => {
+            const area = item.width * item.height;
+            const unitPrice = customerPrices[item.productType] || 0; // Birim fiyatı al
+
+            if (!productGroups[item.productType]) {
+                productGroups[item.productType] = { totalArea: 0, unitPrice: unitPrice }; // Birim fiyatı ekle
+            }
+            productGroups[item.productType].totalArea += area;
+        });
+
+        const totalPrice = Object.entries(productGroups).reduce((sum, [type, data]) => {
+            return sum + (data.totalArea * data.unitPrice);
+        }, 0);
+
+        // Siparişi oluştur
+        const order = {
+            code: newCode,
+            customerId: customer.id,
+            customerName: customer.name,
+            customerCompany: customer.company,
+            customerPhone: customer.phone,
+            customerAddress: customer.address,
+            orderDate: orderDate,
+            measurements: orderData.map(item => ({
+                ...item,
+                unitPrice: customerPrices[item.productType] || 0 // Birim fiyatı burada da ekleyin
+            })), // Ölçüm bilgilerini gönder
+            totalPrice: totalPrice, // Toplam fiyatı buraya ekleyin
+            status: orderStatus
+        };
+
+        // Siparişi LocalStorage'a kaydet
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        orders.push(order);
+        localStorage.setItem('orders', JSON.stringify(orders));
+
+        closeNewOrderModal();
+        loadOrders();
+    }
+}
+
+
+function displayOrders(orders) {
+    const newOrdersTableBody = document.querySelector('#new-orders-table tbody');
+    const cleanedOrdersTableBody = document.querySelector('#cleaned-orders-table tbody');
+    const deliveredOrdersTableBody = document.querySelector('#delivered-orders-table tbody');
+
+    newOrdersTableBody.innerHTML = '';
+    cleanedOrdersTableBody.innerHTML = '';
+    deliveredOrdersTableBody.innerHTML = '';
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Bugünün tarihini saat bilgisi olmadan sıfırlıyoruz
+
+    // Yanıp sönme animasyonu için CSS
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @keyframes blink-red {
+            0% { background-color: red; }
+            50% { background-color: transparent; }
+            100% { background-color: red; }
+        }
+        @keyframes blink-green {
+            0% { background-color: green; }
+            50% { background-color: transparent; }
+            100% { background-color: green; }
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Siparişleri tarihine göre sıralama
+    orders.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate)); // En yeni tarih en üstte
+
+    orders.forEach(order => {
+        const row = document.createElement('tr');
+
+        const dateParts = order.orderDate.split('T')[0].split('-'); // Tarihi YYYY-MM-DD formatından ayıkla
+        const formattedDate = `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`; // DD.MM.YYYY formatı
+
+        row.innerHTML = `
+            <td>${order.code}</td>
+            <td>${order.customerName}</td>
+            <td>${order.customerCompany || 'N/A'}</td> <!-- Firma bilgisi -->
+            <td>${formattedDate}</td> <!-- Formatlanmış tarih -->
+            <td><button onclick="showOrderDetails('${order.code}')">Detay</button></td>
+            <td>
+                <select onchange="updateOrderStatus('${order.code}', this.value)">
+                    <option value="yeni" ${order.status === 'yeni' ? 'selected' : ''}>Yeni</option>
+                    <option value="temizlendi" ${order.status === 'temizlendi' ? 'selected' : ''}>Temizlendi</option>
+                    <option value="teslim-edildi" ${order.status === 'teslim-edildi' ? 'selected' : ''}>Teslim Edildi</option>
+                </select>
+            </td>
+        `;
+
+        const orderDate = new Date(order.orderDate.split('T')[0]); // Sipariş tarihini al
+        orderDate.setHours(0, 0, 0, 0); // Saat bilgisi olmadan karşılaştırma için sıfırla
+
+        const diffTime = today - orderDate;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Gün farkı hesapla
+
+        // "Yeni" durumu için kontrol
+        if (order.status === 'yeni' && orderDate < today) {
+            const selectElement = row.querySelector('select');
+            selectElement.style.animation = "blink-red 1s infinite"; // Yanıp sönme animasyonu ekle
+            selectElement.style.backgroundColor = "red"; // Arka planı kırmızı yap
+        }
+
+        // "Temizlendi" durumu için kontrol
+        if (order.status === 'temizlendi' && diffDays === 3) {
+            const selectElement = row.querySelector('select');
+            selectElement.style.animation = "blink-green 1s infinite"; // Yanıp sönme animasyonu ekle
+            selectElement.style.backgroundColor = "green"; // Arka planı yeşil yap
+        }
+
+        // Duruma göre uygun tabloya ekle
+        switch (order.status) {
+            case 'yeni':
+                newOrdersTableBody.appendChild(row);
+                break;
+            case 'temizlendi':
+                cleanedOrdersTableBody.appendChild(row);
+                break;
+            case 'teslim-edildi':
+                deliveredOrdersTableBody.appendChild(row);
+                break;
+        }
+    });
+}
+
+
+        function updateOrderStatus(orderCode, newStatus) {
+    const orders = JSON.parse(localStorage.getItem('orders')) || [];
+    const orderIndex = orders.findIndex(o => o.code == orderCode);
+    if (orderIndex > -1) {
+        orders[orderIndex].status = newStatus;
+        localStorage.setItem('orders', JSON.stringify(orders));
+        loadOrders(); // Tüm siparişleri tekrar yükle
+    }
+}
+
+function showOrderDetails(orderCode) {
+    const orders = JSON.parse(localStorage.getItem('orders')) || [];
+    const order = orders.find(o => o.code == orderCode);
+
+    if (!order) return;
+
+    const dateParts = order.orderDate.split('T')[0].split('-');
+    const formattedDate = `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`;
+
+    let htmlContent = `
+        <div>
+            <p><strong>Müşteri Firması:</strong> ${order.customerCompany || 'N/A'}</p>
+            <p><strong>Tarih:</strong> ${formattedDate}</p>
+            <p><strong>Sipariş Kodu:</strong> ${order.code}</p>
+            <p><strong>Müşteri Adı:</strong> ${order.customerName}</p>
+            <p><strong>Müşteri Telefonu:</strong> ${order.customerPhone || 'N/A'}</p>
+            <p><strong>Müşteri Adresi:</strong> ${order.customerAddress || 'N/A'}</p>
+            <p><strong>Durum:</strong> ${order.status}</p>
+            <p><strong>Tahsilat Durumu:</strong> ${order.collection || 'Bilgi Yok'}</p>
+        </div>
+
+
+
+        <table border="1" style="width: 80%; border-collapse: collapse;">
+        <h3>Ürün Detayları</h3>
+            <tr>
+                <th>Ürün Adı</th>
+                <th>Ürün Ölçüleri</th>
+                <th>Birim Fiyat (TL)</th>
+                <th>Toplam (TL)</th>
+            </tr>
+    `;
+
+
+    order.measurements.forEach(item => {
+        const area = item.width * item.height;
+        const totalPrice = area * item.unitPrice;
+
+        htmlContent += `
+            <tr>
+                <td>${item.productType}</td>
+                <td>${item.width} x ${item.height} m</td>
+                <td>${item.unitPrice.toFixed(2)}</td>
+                <td>${totalPrice.toFixed(2)}</td>
+            </tr>
+        `;
+    });
+
+    htmlContent += `
+        <tr>
+            <th colspan="3" style="text-align: right;">Toplam Fiyat:</th>
+            <td>${order.totalPrice.toFixed(2)} TL</td>
+        </tr>
+    `;
+
+    if (order.status === 'teslim-edildi') {
+        htmlContent += `
+            <div id="payment-section">
+                <label for="payment-status">Tahsilat Durumu:</label>
+                <select id="payment-status" onchange="updatePaymentStatus('${order.code}', this.value)">
+                    <option value="bilgi-yok" ${order.collection === 'bilgi-yok' ? 'selected' : ''}>Bilgi Yok</option>
+                    <option value="Yapıldı" ${order.collection === 'Yapıldı' ? 'selected' : ''}>Yapıldı</option>
+                    <option value="Yapılmadı" ${order.collection === 'Yapılmadı' ? 'selected' : ''}>Yapılmadı</option>
+                </select>                 <button onclick="savePaymentStatus('${order.code}', document.getElementById('payment-status').value)">Kaydet</button>
+
+            </div>
+        `;
+    }
+    
+
+    detailsContent.innerHTML = htmlContent;
+    orderDetailsModal.style.display = 'block';
+    window.currentOrderCode = order.code;
+    window.currentOrderCustomerName = order.customerName;
+    window.currentOrderCustomerPhone = order.customerPhone;
+    window.currentOrderCustomerAddress = order.customerAddress;
+}
+
+
+
+
+
+function savePaymentStatus() {
+    const paymentStatus = document.getElementById('payment-status').value;
+    const orders = JSON.parse(localStorage.getItem('orders')) || [];
+    const orderIndex = orders.findIndex(o => o.code == window.currentOrderCode);
+    
+    if (orderIndex > -1) {
+        orders[orderIndex].collection = paymentStatus; // Tahsilat durumunu kaydedin
+        localStorage.setItem('orders', JSON.stringify(orders));
+        alert("Tahsilat durumu kaydedildi.");
+    }
+}
+
+function closeModal() {
+    orderDetailsModal.style.display = 'none';
+}
+    function getLogo() {
+        return localStorage.getItem('companyLogo');
+    }
+
+
+function printOrder() {
+    const orderCode = window.currentOrderCode;
+    const customerName = window.currentOrderCustomerName;
+    const customerPhone = window.currentOrderCustomerPhone || 'N/A';
+    const customerAddress = window.currentOrderCustomerAddress || 'N/A';
+
+    const orders = JSON.parse(localStorage.getItem('orders')) || [];
+    const order = orders.find(o => o.code == orderCode);
+
+    if (!order) return;
+
+    const customerCompany = order.customerCompany || 'N/A';
+
+    // Ürün detayları için tablo oluştur
+    let orderDetails = `
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid #000;">
+            <tr>
+                <th style="border: 1px solid #000; padding: 10px; font-family: Arial; font-weight: bold;">Ürün Adı</th>
+                <th style="border: 1px solid #000; padding: 10px; font-family: Arial; font-weight: bold;">Ürün Ölçüleri</th>
+                <th style="border: 1px solid #000; padding: 10px; font-family: Arial; font-weight: bold;">Birim Fiyat (TL)</th>
+                <th style="border: 1px solid #000; padding: 10px; font-family: Arial; font-weight: bold;">Toplam (TL)</th>
+            </tr>
+    `;
+
+    order.measurements.forEach(item => {
+        const area = item.width * item.height;
+        const totalPrice = area * item.unitPrice;
+
+        orderDetails += `
+            <tr>
+                <td style="border: 1px solid #000; padding: 10px; font-family: Arial; font-weight: bold;">${item.productType}</td>
+                <td style="border: 1px solid #000; padding: 10px; font-family: Arial; font-weight: bold;">${item.width} x ${item.height} m</td>
+                <td style="border: 1px solid #000; padding: 10px; font-family: Arial; font-weight: bold;">${item.unitPrice.toFixed(2)}</td>
+                <td style="border: 1px solid #000; padding: 10px; font-family: Arial; font-weight: bold;">${totalPrice.toFixed(2)}</td>
+            </tr>
+        `;
+    });
+
+    orderDetails += '</table>';
+
+    const dateParts = order.orderDate.split('T')[0].split('-');
+    const formattedDate = `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`;
+    const logoSrc = getLogo();
+
+    const content = `
+        <div style="width: 80mm; height: 210mm; font-family: Arial; font-weight: bold; font-size: 12px;">
+            <table style="width: 100%; border-collapse: collapse; border: 1px solid #000;">
+                <tr>
+                    <td colspan="2" style="text-align: center; padding: 10px; border: 1px solid #000;">
+                    <img src="${logoSrc}" alt="Logo" style="max-width: 20%; height: auto;"/><br>
+                        <strong>HİSAR</strong><br>
+                        <strong>KOLTUK VE PERDE TEMİZLİK HİZMETLERİ</strong><br>
+                        <strong>0553 404 02 35</strong><br>
+                        <p>Yeşiltpe mah. Alipaşa sok. no:12 Ortahisar/TRABZON</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align: left; padding: 10px; border: 1px solid #000;">
+                        <strong>Sipariş Kodu: ${orderCode}</strong>
+                    </td>
+                    <td colspan="2" style="text-align: right; padding: 10px; border: 1px solid #000;">
+                        <strong>${formattedDate}</strong>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="text-align: left; padding: 10px; border: 1px solid #000;">
+                        <strong>Müşteri Bilgileri:</strong><br>
+                        <strong>Adı: ${customerName}</strong><br>
+                        <strong>Telefon: ${customerPhone}</strong><br>
+                        <strong>Adres: ${customerAddress}</strong><br>
+                        <strong>Firma: ${customerCompany}</strong>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="text-align: left; padding: 10px; border: 1px solid #000;">
+                        <strong>Ürün Detayları:</strong><br>
+                        ${orderDetails}
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="text-align: right; padding: 10px; border: 1px solid #000;">
+                        <strong>Toplam Fiyat: ${order.totalPrice.toFixed(2)} TL</strong>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="text-align: center; padding: 10px; border: 1px solid #000;">
+                        <strong>Bizi Tercih Ettiğiniz için Teşekkür Ederiz.</strong>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    `;
+
+    const printWindow = window.open('', '', 'height=500,width=500');
+    printWindow.document.write(content);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+        function deleteOrder() {
+            if (confirm('Bu siparişi silmek istediğinize emin misiniz?')) {
+                const orders = JSON.parse(localStorage.getItem('orders')) || [];
+                const updatedOrders = orders.filter(order => order.code !== window.currentOrderCode);
+                localStorage.setItem('orders', JSON.stringify(updatedOrders));
+                closeModal();
+                loadOrders();
+            }
+        }
+
+        function refreshPage() {
+            location.reload();
+        }
+
+        function searchOrders() {
+            const searchTerm = document.getElementById('order-search').value.toLowerCase();
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const filteredOrders = orders.filter(order => 
+                order.customerName.toLowerCase().includes(searchTerm) || order.code.toString().includes(searchTerm)
+            );
+            displayOrders(filteredOrders);
+        }
+
+        window.onload = function() {
+            loadCustomers();
+            loadOrders();
+            const backgroundPic = localStorage.getItem('backgroundpic');
+            if (backgroundPic) {
+                document.body.style.backgroundImage = `url(${backgroundPic})`;
+
+            getLogo();
+           }
+        };
+    </script>
+</body>
+</html>

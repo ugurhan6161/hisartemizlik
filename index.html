@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Sayfası</title>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        let password = "";
+        let correctPassword = localStorage.getItem("correctpass") || "1234"; // localStorage'dan alınır, yoksa varsayılan
+
+        function handleKeyPress(num) {
+            if (password.length < 4) {
+                password += num;
+                updateDisplay();
+                if (password.length === 4) {
+                    checkPassword();
+                }
+            }
+        }
+
+        function deleteLastDigit() {
+            password = password.slice(0, -1);
+            updateDisplay();
+        }
+
+        function resetPassword() {
+            password = "";
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const stars = document.getElementById("password-display");
+            stars.innerText = "*".repeat(password.length);
+            if (password.length === 4) {
+                checkPassword();
+            }
+        }
+
+        function checkPassword() {
+            if (password === correctPassword) {
+                window.location.href = "order-list.html"; // Doğru şifre, yönlendir
+            } else if (password.length === 4) {
+                document.getElementById("error-message").innerText = "Şifre yanlış, tekrar deneyin.";
+                resetPassword();
+            }
+        }
+
+        window.onload = function() {
+            const backgroundPic = localStorage.getItem('backgroundpic'); // localStorage'dan arka plan resmi al
+            if (backgroundPic) {
+                document.body.style.backgroundImage = `url(${backgroundPic})`;
+            }
+        };
+    </script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background: no-repeat center center fixed; /* Arka plan resmi buraya yüklenecek */
+            background-size: cover;
+            display: flex;
+            flex-direction: column; /* Dikey yönlendirme */
+            justify-content: center;
+            align-items: center;
+            text-align: center; /* Metin ortalama */
+        }
+
+        h4 {
+            background-color: #007BFF;
+            color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            width: 90%; /* Mobil uyum için genişlik ayarı */
+            max-width: 400px; /* Maksimum genişlik ayarı */
+        }
+
+        .lock-screen {
+            background-color: rgba(255, 255, 255, 0.8); /* Beyaz şeffaf arka plan */
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            width: 90%; /* Mobil uyum için genişlik ayarı */
+            max-width: 400px; /* Maksimum genişlik ayarı */
+        }
+
+        .password-display {
+            font-size: 36px; /* Yıldızların font boyutu */
+            margin-bottom: 20px;
+        }
+
+        .button-row {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap; /* Butonların taşmasını engelle */
+        }
+
+        .button {
+            width: 80px; /* Buton genişliği */
+            height: 80px; /* Buton yüksekliği */
+            border-radius: 50%;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            font-size: 36px; /* Buton üzerindeki rakamların boyutu */
+            margin: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        #error-message {
+            color: red;
+            margin-top: 20px;
+            font-size: 16px; /* Hata mesajı yazı boyutu */
+        }
+
+        /* Responsive ayarlar */
+        @media (max-width: 600px) {
+            .button {
+                width: 60px; /* Küçük ekranlar için buton genişliği */
+                height: 60px; /* Küçük ekranlar için buton yüksekliği */
+                font-size: 28px; /* Buton üzerindeki rakamların boyutu */
+            }
+
+            .password-display {
+                font-size: 24px; /* Küçük ekranlarda yıldızların font boyutu */
+            }
+
+            h4 {
+                font-size: 20px; /* Başlık yazı boyutu */
+            }
+        }
+    </style>
+</head>
+<body>
+    <h4>HİSAR TEMİZLİK</h4>
+
+    <div class="lock-screen">
+        <div id="password-display" class="password-display">****</div>
+        <div class="button-row">
+            <button class="button" onclick="handleKeyPress(1)">1</button>
+            <button class="button" onclick="handleKeyPress(2)">2</button>
+            <button class="button" onclick="handleKeyPress(3)">3</button>
+        </div>
+        <div class="button-row">
+            <button class="button" onclick="handleKeyPress(4)">4</button>
+            <button class="button" onclick="handleKeyPress(5)">5</button>
+            <button class="button" onclick="handleKeyPress(6)">6</button>
+        </div>
+        <div class="button-row">
+            <button class="button" onclick="handleKeyPress(7)">7</button>
+            <button class="button" onclick="handleKeyPress(8)">8</button>
+            <button class="button" onclick="handleKeyPress(9)">9</button>
+        </div>
+        <div class="button-row">
+            <button class="button" onclick="deleteLastDigit()">&lt;</button>
+            <button class="button" onclick="handleKeyPress(0)">0</button>
+            <button class="button" onclick="resetPassword()">C</button>
+        </div>
+        <div id="error-message"></div>
+    </div>
+    <h4>HOŞ GELDİNİZ</h4>
+</body>
+</html>

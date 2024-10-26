@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Müşteriler - Stor Temizlik Firması</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+       body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    background: no-repeat center center fixed; /* Arka plan resmi buraya yüklenecek */
+    background-size: cover;
+    display: flex; /* Flexbox kullanımı ile içerikleri ortalamak için */
+    justify-content: center;
+    align-items: center;
+}
+
+.modal {
+    display: none; /* Gizli başlangıçta */
+    position: fixed; /* Ekranın üzerinde konumlanır */
+    z-index: 1000; /* Diğer öğelerin üzerinde görünür */
+    left: 0;
+    top: 0;
+    width: 100%; /* Tüm ekranı kaplar */
+    height: 100%; /* Tüm ekranı kaplar */
+    overflow: auto; /* Taşan içerik için kaydırma çubuğu */
+    background-color: rgba(0, 0, 0, 0.4); /* Yarı saydam arka plan */
+}
+
+.modal-content {
+    background-color: #fefefe; /* Beyaz arka plan */
+    margin: 15% auto; /* Üstten ve alttan boşluk, ortalamak için */
+    padding: 20px; /* İçerik için boşluk */
+    border: 1px solid #888; /* Kenarlık */
+    width: 90%; /* Mobil uyum için genişlik ayarı */
+    max-width: 400px; /* Maksimum genişlik ayarı */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Gölge efekti */
+    border-radius: 8px; /* Kenarları yuvarlat */
+}
+
+.modal-content button {
+    display: inline-block;
+    margin: 10px 0;
+    width: 100%; /* Butonları tam genişlikte yapmak için */
+    padding: 10px; /* Buton içi boşluk */
+}
+
+.modal-content .print-button {
+    display: block;
+    margin: 10px 0; /* Düzgün bir boşluk için */
+}
+
+.modal-content .delete-button,
+.modal-content .edit-button {
+    display: inline-block; /* Yanyana dizilmesi için */
+    width: 48%; /* Her bir butonun genişliği */
+    margin: 0 1%; /* Butonlar arasında boşluk */
+}
+
+.modal-content .submit-button {
+    display: block;
+    margin: 0 auto;
+}
+
+    </style>
+</head>
+<body>
+   <img id="company-logo" src="" alt="Logo" style="max-width: 25px; display: none;" />
+   <h1>Müşteriler</h1>
+<div id="customers-container">
+    <button onclick="openAddCustomerModal()">Yeni Müşteri Ekle</button>
+    <input type="text" id="customer-search" placeholder="Müşteri arayın..." onkeyup="searchCustomers()">
+    <table id="customer-list" border="1" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Adı</th>
+                <th>Telefon</th>
+                <th>Firma</th>
+                <th>Detay</th>
+                <th>Sipariş Ekle</th>
+                <th>Paylaş</th> <!-- Paylaş butonu için yeni sütun -->
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Müşteriler burada listelenecek -->
+        </tbody>
+    </table>
+    <div id="no-customers-message" style="display: none;">Henüz kayıtlı müşteri yok.</div>
+</div>
+
+    <div class="fixed-menu">
+    <a href="order-list.html"><i class="fas fa-list"></i><span>Sipariş Listesi</span></a>
+    <a href="customers.html"><i class="fas fa-users"></i><span>Müşteriler</span></a>
+    <a href="reports.html"><i class="fas fa-chart-line"></i><span>Raporlar</span></a>
+    <a href="settings.html"><i class="fas fa-cog"></i><span>Ayarlar</span></a>
+    <a href="index.html" onclick="logout()"><i class="fas fa-sign-out-alt"></i><span>Çıkış</span></a>
+    </div>
+
+    <!-- Yeni Müşteri Ekle Modal -->
+    <div id="add-customer-modal" class="modal">
+        <div class="modal-content">
+            <button class="close" onclick="closeAddCustomerModal()">Kapat</button>
+            <h2>Yeni Müşteri Ekle</h2>
+            <label for="customer-name">Adı:</label>
+            <input type="text" id="customer-name"><br>
+            <label for="customer-phone">Telefon:</label>
+            <input type="text" id="customer-phone"><br>
+            <label for="customer-address">Adresi:</label>
+            <input type="text" id="customer-address"><br>
+            <label for="customer-company">Firma:</label>
+            <select id="customer-company">
+                <option value="">Seçiniz</option>
+                <!-- Firma isimleri buraya eklenecek -->
+            </select><br>
+            <button onclick="addCustomer()">Ekle</button>
+        </div>
+    </div>
+
+    <!-- Müşteri Detayları Modal -->
+    <div id="customer-details-modal" class="modal">
+        <div class="modal-content">
+            <button class="close" onclick="closeCustomerDetailsModal()">Kapat</button>
+            <button class="delete-button" onclick="deleteCustomer()">Sil</button>
+            <button class="edit-button" onclick="openEditCustomerModal()">Düzenle</button>
+            <button class="print-button" onclick="printCustomerDetails()">Yazdır</button>
+
+            <h2>Müşteri Detayları</h2>
+            <div id="customer-details-content"></div>
+        </div>
+    </div>
+
+
+   <div id="edit-customer-modal" class="modal">
+        <div class="modal-content">
+            <button class="close" onclick="closeEditCustomerModal()">Kapat</button>
+            <h2>Müşteri Düzenle</h2>
+            <label for="edit-customer-name">Adı:</label>
+            <input type="text" id="edit-customer-name"><br>
+            <label for="edit-customer-phone">Telefon:</label>
+            <input type="text" id="edit-customer-phone"><br>
+            <label for="edit-customer-address">Adresi:</label>
+            <input type="text" id="edit-customer-address"><br>
+
+            <button onclick="updateCustomer()">Kaydet</button> <!-- Güncelleme butonu -->
+        </div>
+    </div>
+
+
+    <!-- Sipariş Ekle Modal -->
+    <div id="order-modal" class="modal">
+        <div class="modal-content">
+            <button class="close" onclick="closeOrderModal()">Kapat</button>
+            <h2>Sipariş Ekle</h2>
+            <div id="customer-suggestions"></div>
+            <button type="button" onclick="addMeasurement()">+Ekle</button>
+<div id="measurements-container">
+    <div class="measurement-row">
+        <select class="product-type" onchange="handleProductTypeChange(this)">
+            <option value="stor">Stor</option>
+            <option value="zebra">Zebra</option>
+            <option value="koltuk">Koltuk</option>
+            <option value="yatak">Yatak</option>
+            <option value="diğer">Diğer</option>
+
+        </select>
+        <label for="width">En:</label>
+        <input type="number" class="width" required>
+        <label for="height">Boy:</label>
+        <input type="number" class="height" required>
+        <button type="button" class="remove-measurement" onclick="removeMeasurement(this)">Kaldır</button>
+    </div>
+                </div>
+                <label for="order-status">Durum:</label>
+                <select id="order-status">
+                    <option value="yeni">Yeni</option>
+                    <option value="temizlendi">Temizlendi</option>
+                    <option value="teslim-edildi">Teslim Edildi</option>
+                </select>
+            <button type="button" onclick="submitOrder()">Siparişi Kaydet</button>
+        </div>
+    </div>
+
+    <script>
+        const customersContainer = document.querySelector('#customer-list tbody');
+        const customerDetailsModal = document.getElementById('customer-details-modal');
+        const customerDetailsContent = document.getElementById('customer-details-content');
+
+        function loadCustomers() {
+            customersContainer.innerHTML = '';
+            const customers = JSON.parse(localStorage.getItem('customers')) || [];
+            const noCustomersMessage = document.getElementById('no-customers-message');
+
+            if (customers.length === 0) {
+                noCustomersMessage.style.display = 'block';
+            } else {
+                noCustomersMessage.style.display = 'none';
+                customers.forEach(customer => {
+                    const row = customersContainer.insertRow();
+                    row.innerHTML = `
+                        <td>${customer.id}</td>
+                        <td>${customer.name}</td>
+                        <td>${customer.phone}</td>
+                        <td>${customer.company || 'Belirtilmemiş'}</td>
+                        <td><button onclick="showCustomerDetails('${customer.id}')">Detay</button></td>
+                        <td><button onclick="openOrderModal('${customer.id}', '${customer.name}')">Sipariş Ekle</button></td>
+                        <td><button onclick="shareCustomer('${customer.id}')">Paylaş</button></td> <!-- Paylaş butonu -->
+                    `;
+                });
+            }
+        }
+
+        function openAddCustomerModal() {
+            document.getElementById('add-customer-modal').style.display = 'block';
+            loadCompanyNames(); // Firma isimlerini yükle
+        }
+   function logout() {
+
+        alert("Başarıyla çıkış yapıldı.");
+    }
+
+        function closeAddCustomerModal() {
+            document.getElementById('add-customer-modal').style.display = 'none';
+        }
+
+        function loadCompanyNames() {
+            const prices = JSON.parse(localStorage.getItem('prices')) || {};
+            const companySelect = document.getElementById('customer-company');
+
+            // Firma isimlerini dropdown'a ekle
+            Object.keys(prices).forEach(companyName => {
+                const option = document.createElement('option');
+                option.value = companyName;
+                option.textContent = companyName;
+                companySelect.appendChild(option);
+            });
+        }
+function removeMeasurement(button) {
+    const measurementDiv = button.parentElement; // Kaldırılacak öğeyi al
+    const measurementsContainer = document.getElementById('measurements-container');
+    measurementsContainer.removeChild(measurementDiv); // Öğeyi kaldır
+}
+
+        function addCustomer() {
+            const name = document.getElementById('customer-name').value;
+            const phone = document.getElementById('customer-phone').value;
+            const address = document.getElementById('customer-address').value;
+            const company = document.getElementById('customer-company').value;
+
+            if (name && phone) {
+                const customers = JSON.parse(localStorage.getItem('customers')) || [];
+                const newCustomer = {
+                    id: Math.floor(10000 + Math.random() * 90000),
+                    name: name,
+                    phone: phone,
+                    address: address,
+                    company: company,
+                    orders: []
+                };
+                customers.push(newCustomer);
+                localStorage.setItem('customers', JSON.stringify(customers));
+                closeAddCustomerModal();
+                loadCustomers();
+            } else {
+                alert('Lütfen müşteri adı ve telefonunu girin.');
+            }
+        }
+
+        function showCustomerDetails(customerId) {
+            const customers = JSON.parse(localStorage.getItem('customers')) || [];
+            const customer = customers.find(c => c.id == customerId);
+            customerDetailsContent.dataset.id = customerId;
+
+            customerDetailsContent.innerHTML = `
+                <p>ID: ${customer.id}</p>
+                <p>Adı: ${customer.name}</p>
+                <p>Telefon: ${customer.phone}</p>
+                <p>Adresi: ${customer.address}</p>
+                <p>Firma: ${customer.company || 'Belirtilmemiş'}</p>
+            `;
+            customerDetailsModal.style.display = 'block';
+        }
+
+        function closeCustomerDetailsModal() {
+            customerDetailsModal.style.display = 'none';
+        }
+
+        function deleteCustomer() {
+            const customerId = customerDetailsContent.dataset.id;
+            const customers = JSON.parse(localStorage.getItem('customers')) || [];
+            const updatedCustomers = customers.filter(c => c.id != customerId);
+            localStorage.setItem('customers', JSON.stringify(updatedCustomers));
+            closeCustomerDetailsModal();
+            loadCustomers();
+        }
+
+
+
+    function getLogo() {
+        return localStorage.getItem('companyLogo');
+    }
+
+
+
+        function printCustomerDetails() {
+    const customerId = customerDetailsContent.dataset.id;
+    const customers = JSON.parse(localStorage.getItem('customers')) || [];
+    const customer = customers.find(c => c.id == customerId);
+    const logoSrc = getLogo();
+
+    const printContent = `
+    <div style="font-family: Arial, sans-serif; width: 80mm; height: 210mm; font-weight: bold; font-size: 12px; margin: auto;">
+
+        <table style="width: 100%; border-collapse: collapse;">
+ <tr>
+                    <td colspan="2" style="text-align: center; padding: 10px; border: 1px solid #000;">
+                    <img src="${logoSrc}" alt="Logo" style="max-width: 20%; height: auto;"/><br>
+                        <strong>HİSAR</strong><br>
+                        <strong>KOLTUK VE PERDE TEMİZLİK HİZMETLERİ</strong><br>
+                        <strong>0553 404 02 35</strong><br>
+                        <p>Yeşiltpe mah. Alipaşa sok. no:12 Ortahisar/TRABZON</p>
+                    </td>
+</table>
+ <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td colspan="2" style="text-align: center; padding: 10px; border: 1px solid #000;">
+
+            <strong>Müşteri Detayları</strong><br>
+           </tr> 
+            <tr>
+                <td style="border: 1px solid #000; padding: 5px;"><strong>ID:</strong></td>
+                <td style="border: 1px solid #000; padding: 5px;">${customer.id}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 5px;"><strong>Adı:</strong></td>
+                <td style="border: 1px solid #000; padding: 5px;">${customer.name}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 5px;"><strong>Telefon:</strong></td>
+                <td style="border: 1px solid #000; padding: 5px;">${customer.phone}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 5px;"><strong>Adresi:</strong></td>
+                <td style="border: 1px solid #000; padding: 5px;">${customer.address}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 5px;"><strong>Firma:</strong></td>
+                <td style="border: 1px solid #000; padding: 5px;">${customer.company || 'Belirtilmemiş'}</td>
+            </tr>
+        </table>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+              <td colspan="2" style="text-align: center; padding: 10px; border: 1px solid #000;">
+              <strong>Sipariş Bilgileri</strong><br>    
+            <tr>
+                <td style="border: 1px solid #000; padding: 5px;"><strong>Alınan Ürün Adeti:</strong></td>
+                <td style="border: 1px solid #000; padding: 5px;"><strong>Teslim Tarihi:</strong></td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 5px; height: 50px;"></td>
+                <td style="border: 1px solid #000; padding: 5px; height: 50px;"></td>
+            </tr>
+        </table>
+    </div>
+`;
+
+const win = window.open('', '', 'width=600,height=600');
+win.document.write(`<html><head><title>Müşteri Detayları</title></head><body>${printContent}</body></html>`);
+win.document.close();
+win.print();
+
+}
+
+
+        function openOrderModal(customerId, customerName) {
+            selectedCustomerId = customerId;
+            document.getElementById('customer-suggestions').innerHTML = `<strong>Seçilen Müşteri: ${customerName}</strong>`;
+            document.getElementById('order-modal').style.display = 'block';
+        }
+
+        function closeOrderModal() {
+            document.getElementById('order-modal').style.display = 'none';
+        }
+
+function addMeasurement() {
+    const measurementDiv = document.createElement('div');
+    measurementDiv.className = 'measurement-row';
+
+    measurementDiv.innerHTML = `
+        <select class="product-type" onchange="handleProductTypeChange(this)">
+            <option value="stor">Stor</option>
+            <option value="zebra">Zebra</option>
+            <option value="koltuk">Koltuk</option>
+            <option value="yatak">Yatak</option>
+            <option value="diğer">Diğer</option>
+        </select>
+        <label for="width">En:</label>
+        <input type="number" class="width" required>
+        <label for="height">Boy:</label>
+        <input type="number" class="height" required>
+        <button type="button" class="remove-measurement" onclick="removeMeasurement(this)">Kaldır</button>
+    `;
+
+    // measurementsContainer'ı tanımla
+    const measurementsContainer = document.getElementById('measurements-container');
+    measurementsContainer.appendChild(measurementDiv);
+}
+function submitOrder() {
+    const measurements = [];
+    const measurementRows = document.querySelectorAll('.measurement-row');
+
+    measurementRows.forEach(row => {
+        const productType = row.querySelector('.product-type').value;
+        const width = parseFloat(row.querySelector('.width').value);
+        const height = parseFloat(row.querySelector('.height').value);
+        if (width && height) {
+            measurements.push({ productType, width, height });
+        }
+    });
+
+    const customers = JSON.parse(localStorage.getItem('customers')) || [];
+    const customer = customers.find(c => c.id == selectedCustomerId);
+    const orderStatus = document.getElementById('order-status').value;
+
+    if (customer && measurements.length > 0) {
+        const now = new Date();
+        const orderDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString();
+
+        // Sipariş kodu oluştur
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        const lastCode = orders.length > 0 ? Math.max(...orders.map(o => o.code)) : 9999; // En son sipariş kodunu al
+        const newCode = (lastCode + 1) % 100000; // 100000'e ulaştığında sıfırdan başla
+
+        // Fiyatları al
+        const prices = JSON.parse(localStorage.getItem('prices')) || {};
+        const customerPrices = prices[customer.company] || { stor: 0, zebra: 0, koltuk: 1, yatak: 1, diğer: 1 };
+        const productGroups = {};
+
+        // Ölçümleri ve fiyatları işleyerek toplam alan ve birim fiyatı ekle
+        measurements.forEach(item => {
+            const area = item.width * item.height;
+            const unitPrice = customerPrices[item.productType] || 0; // Birim fiyatı al
+
+            if (!productGroups[item.productType]) {
+                productGroups[item.productType] = { totalArea: 0, unitPrice: unitPrice }; // Birim fiyatı ekle
+            }
+            productGroups[item.productType].totalArea += area;
+        });
+
+        const totalPrice = Object.entries(productGroups).reduce((sum, [type, data]) => {
+            return sum + (data.totalArea * data.unitPrice);
+        }, 0);
+
+        // Siparişi oluştur
+        const order = {
+            code: newCode, // Yeni sipariş kodu
+            customerId: customer.id,
+            customerName: customer.name,
+            customerCompany: customer.company, // Müşteri firma bilgisi
+            customerPhone: customer.phone,
+            customerAddress: customer.address,
+            orderDate: orderDate,
+            measurements: measurements.map(item => ({
+                ...item,
+                unitPrice: customerPrices[item.productType] || 0 // Birim fiyatı burada da ekleyin
+            })), // Ölçüm bilgilerini gönder
+            totalPrice: totalPrice, // Toplam fiyatı buraya ekleyin
+            status: orderStatus
+        };
+
+        // Siparişi LocalStorage'a kaydet
+        orders.push(order);
+        localStorage.setItem('orders', JSON.stringify(orders));
+
+        closeOrderModal(); // Modalı kapat
+        loadCustomers(); // Müşterileri yeniden yükle
+    }
+}
+
+ let editingCustomerId; // Düzenlenecek müşteri ID'si
+function showCustomerDetails(customerId) {
+    const customers = JSON.parse(localStorage.getItem('customers')) || [];
+    const customer = customers.find(c => c.id == customerId);
+    customerDetailsContent.dataset.id = customerId;
+
+    document.getElementById('customer-details-content').innerHTML = `
+        <p>ID: ${customer.id}</p>
+        <p>Adı: ${customer.name}</p>
+        <p>Telefon: ${customer.phone}</p>
+        <p>Adresi: ${customer.address}</p>
+        <p>Firma: ${customer.company || 'Belirtilmemiş'}</p>
+        <h3>Geçmiş Siparişler</h3>
+        <table border="1" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th>Kod</th>
+                    <th>Tarih</th>
+                    <th>Ölçüler</th>
+                    <th>Adet</th>
+                    <th>Toplam Fiyat</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${getCustomerOrders(customer.id)}
+            </tbody>
+        </table>
+    `;
+    customerDetailsModal.style.display = 'block';
+}
+
+// Müşteriye ait siparişleri döndür
+function getCustomerOrders(customerId) {
+    const orders = JSON.parse(localStorage.getItem('orders')) || [];
+    return orders
+        .filter(order => order.customerId == customerId)
+        .map(order => {
+            const measurements = order.measurements.map(item => `${item.productType}: ${item.width} x ${item.height} m`).join(', ');
+            const totalPrice = calculateOrderTotal(order);
+            return `
+                <tr>
+                    <td>${order.code}</td>
+                    <td>${new Date(order.orderDate).toLocaleDateString()}</td>
+                    <td>${measurements}</td>
+                    <td>${order.measurements.length}</td>
+                    <td>${totalPrice.toFixed(2)} TL</td>
+                </tr>
+            `;
+        })
+        .join('') || '<tr><td colspan="5">Hiç sipariş bulunamadı.</td></tr>';
+}
+
+// Siparişin toplam fiyatını hesapla
+function calculateOrderTotal(order) {
+    const prices = JSON.parse(localStorage.getItem('prices')) || {};
+    const customerPrices = prices[order.customerCompany] || { stor: 0, zebra: 0 };
+    return order.measurements.reduce((total, item) => {
+        const area = item.width * item.height;
+        return total + (area * (customerPrices[item.productType] || 0));
+    }, 0);
+}
+
+        function openEditCustomerModal() {
+            const customerId = customerDetailsContent.dataset.id;
+            const customers = JSON.parse(localStorage.getItem('customers')) || [];
+            const customer = customers.find(c => c.id == customerId);
+            
+            editingCustomerId = customerId; // Düzenlenecek müşteri ID'sini kaydet
+            document.getElementById('edit-customer-name').value = customer.name;
+            document.getElementById('edit-customer-phone').value = customer.phone;
+            document.getElementById('edit-customer-address').value = customer.address;
+
+            document.getElementById('edit-customer-modal').style.display = 'block'; // Düzenle modalını aç
+        }
+
+        function closeEditCustomerModal() {
+            document.getElementById('edit-customer-modal').style.display = 'none';
+        }
+
+        function updateCustomer() {
+            const customers = JSON.parse(localStorage.getItem('customers')) || [];
+            const customerIndex = customers.findIndex(c => c.id == editingCustomerId);
+
+            if (customerIndex > -1) {
+                customers[customerIndex].name = document.getElementById('edit-customer-name').value;
+                customers[customerIndex].phone = document.getElementById('edit-customer-phone').value;
+                customers[customerIndex].address = document.getElementById('edit-customer-address').value;
+
+
+                localStorage.setItem('customers', JSON.stringify(customers));
+                closeEditCustomerModal();
+                loadCustomers(); // Müşteri listesini yenile
+            }
+        }
+
+function shareCustomer(customerId) {
+    const customers = JSON.parse(localStorage.getItem('customers')) || [];
+    const customer = customers.find(c => c.id == customerId);
+    
+    if (customer) {
+        const message = `
+* Müşteri Bilgileri *
+___________________________________
+ Alan____|Bilgi                          
+----------|------------------------
+ ID______| ${customer.id}                
+ Adı_____| ${customer.name}              
+ Telefon_| ${customer.phone}             
+ Adresi__| ${customer.address} 
+          
+ Firma___| ${customer.company || 'Belirtilmemiş'} 
+__________________________________
+        `;
+
+        const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message.trim())}`;
+        
+        window.open(whatsappUrl, '_blank');
+    } else {
+        alert('Müşteri bulunamadı.');
+    }
+}
+function handleProductTypeChange(selectElement) {
+    const measurementRow = selectElement.closest('.measurement-row');
+    
+    const widthLabel = measurementRow.querySelector('label[for="width"]');
+    const heightLabel = measurementRow.querySelector('label[for="height"]');
+    const widthInput = measurementRow.querySelector('.width');
+    const heightInput = measurementRow.querySelector('.height');
+
+    const selectedValue = selectElement.value;
+
+    if (selectedValue === 'koltuk' || selectedValue === 'yatak' || selectedValue === 'diğer') {
+        widthLabel.textContent = 'Adet'; // "En" etiketini "Adet" yap
+        heightLabel.textContent = 'Fiyat'; // "Boy" etiketini "Fiyat" yap
+    } else {
+        widthLabel.textContent = 'En'; // "Adet" etiketini geri al
+        heightLabel.textContent = 'Boy'; // "Fiyat" etiketini geri al
+    }
+}
+
+        function searchCustomers() {
+            const searchTerm = document.getElementById('customer-search').value.toLowerCase();
+            const customers = JSON.parse(localStorage.getItem('customers')) || [];
+            customersContainer.innerHTML = '';
+
+            customers.forEach(customer => {
+                if (customer.name.toLowerCase().includes(searchTerm) || customer.phone.includes(searchTerm)) {
+                    const row = customersContainer.insertRow();
+                    row.innerHTML = `
+                        <td>${customer.id}</td>
+                        <td>${customer.name}</td>
+                        <td>${customer.phone}</td>
+                        <td>${customer.company || 'Belirtilmemiş'}</td> <!-- Firma bilgisi arama sonuçlarına eklendi -->
+                        <td><button onclick="showCustomerDetails('${customer.id}')">Detay</button></td>
+                        <td><button onclick="openOrderModal('${customer.id}', '${customer.name}')">Sipariş Ekle</button></td>
+                    `;
+                }
+            });
+        }
+
+        window.onload = loadCustomers;
+            const backgroundPic = localStorage.getItem('backgroundpic');
+            if (backgroundPic) {
+                document.body.style.backgroundImage = `url(${backgroundPic})`;
+
+          getLogo();
+
+        }
+    </script>
+</body>
+</html>
